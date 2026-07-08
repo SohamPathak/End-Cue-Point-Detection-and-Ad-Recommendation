@@ -15,13 +15,13 @@ the **ad-baked** video side by side, with the reasoning behind the decision.
 
 ## 🎥 Demo
 
-▶️ **[Watch the demo video](Demo%20Video.mp4)** — `Demo Video.mp4` in the repo
-root (GitHub streams it inline when the file is opened).
+- ▶️ **[Walkthrough / UI demo](Demo%20Video.mp4)** — `Demo Video.mp4` (repo root).
+- ▶️ **[Sample output](outputs/Demo%20Output.mp4)** — `outputs/Demo Output.mp4`,
+  a rendered result with the ad burned into the end cue point.
 
-To embed it as an inline autoplaying player on the repo page, drag
-`Demo Video.mp4` into the GitHub README editor (or any issue/PR comment) — GitHub
-returns a `https://github.com/user-attachments/...` URL; paste that in place of
-this link.
+GitHub streams these inline when the file is opened. To embed one as an inline
+autoplaying player on the repo page, drag it into the GitHub README editor and
+paste the resulting `https://github.com/user-attachments/...` URL here.
 
 ---
 
