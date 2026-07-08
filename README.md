@@ -172,7 +172,7 @@ src/brahma/
   exceptions.py               central exception hierarchy
 configs/
   config.yaml                 ALL tunables (models, thresholds, ad catalog, paths)
-  creds.example.json          service-account template (key names only)
+  bq_creds.example.json       service-account template (structure to fill in)
   prompts/*.txt               editable LLM prompts
 scripts/eval_outro.py         offline detector evaluation (CV as reference)
 tests/                        pytest suite (90% coverage)
@@ -189,13 +189,16 @@ tests/                        pytest suite (90% coverage)
 
 ### Auth — keys, not values
 This project authenticates Gemini through **Vertex AI** using a service-account
-file. **No secret values are committed** — only key *names*:
-- `configs/creds.example.json` — the expected fields, empty.
+file. **No secret values are committed** — only the structure to fill in:
+- `configs/bq_creds.example.json` — the exact service-account JSON structure with
+  placeholder hints for each field. **Copy it to `configs/bq_creds.json` and fill
+  in your values.**
 - `.env.example` — the env var names.
 
 ```bash
-cp .env.example .env                       # then adjust if needed
-# place your real service account at configs/bq_creds.json  (gitignored)
+cp .env.example .env                              # then adjust if needed
+cp configs/bq_creds.example.json configs/bq_creds.json
+# fill configs/bq_creds.json with your GCP service-account values (gitignored)
 ```
 
 ### Local (venv + pip)
