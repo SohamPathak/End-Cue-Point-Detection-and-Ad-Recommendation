@@ -1,0 +1,14 @@
+# Core app
+streamlit==1.40.2
+pydantic==2.10.4
+pydantic-settings==2.7.1
+PyYAML==6.0.2
+httpx==0.28.1
+
+# Video / CV
+scenedetect==0.6.5
+opencv-python-headless==4.10.0.84
+
+# Gemini via Vertex AI (service-account auth)
+google-genai==0.8.0
+google-auth==2.37.0

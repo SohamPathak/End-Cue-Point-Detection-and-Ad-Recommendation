@@ -1,0 +1,26 @@
+# Secrets — real creds never committed (ship configs/creds.example.json instead)
+configs/bq_creds.json
+.env
+
+# Generated composites/cache (regenerated at runtime) — NOT the source videos.
+outputs/
+*.mp4.tmp
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# NOTE: source videos are intentionally tracked (Demo Video.mp4, sample_video/,
+# adv_video/) so the demo and assets ship with the repo.

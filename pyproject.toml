@@ -1,0 +1,67 @@
+[project]
+name = "brahma"
+version = "0.1.0"
+description = "Weather-aware outro ad insertion — an agentic recommendation system"
+requires-python = ">=3.9"
+readme = "README.md"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+src = ["src", "app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "PL", "N", "D", "ANN"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "ANN", "PLR2004", "S101"]
+"app/*" = ["D"]
+# Eval script: readable inline thresholds are clearer than named constants here.
+"scripts/*" = ["PLR2004"]
+# JSON parsing legitimately returns Any; compositor genuinely needs its params.
+"src/brahma/clients/gemini.py" = ["ANN401"]
+"src/brahma/features/base.py" = ["ANN401"]
+"src/brahma/services/compositor.py" = ["PLR0913", "PLR0915"]
+"src/brahma/agent/orchestrator.py" = ["PLR0913"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+exclude = ["tests/"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["scenedetect.*", "cv2.*", "google.*", "streamlit.*", "yaml.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# These third-party packages (Streamlit transitive deps) ship 3.10+ match
+# syntax that a 3.9 target cannot parse. We never type-check them directly, so
+# skip following into them.
+module = ["click.*", "anyio.*", "starlette.*", "httpx.*", "httpcore.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

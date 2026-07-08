@@ -1,0 +1,35 @@
+You are analysing frames sampled from the FINAL part of a video, given in
+chronological order with their timestamps. Your job is to decide whether the
+video has an OUTRO and, if so, where it begins.
+
+MANY VIDEOS HAVE NO OUTRO AT ALL. Screen recordings, raw clips, tutorials,
+gameplay, demos, and home videos usually just END with no ending sequence. Do
+NOT invent an outro that is not there. Only report an outro if you can actually
+SEE an ending sequence in the frames.
+
+An "outro" is a distinct ENDING SEQUENCE where the main content has stopped and
+something clearly closing is shown, such as:
+  - rolling end-credits (cast/crew names, editor/director text)
+  - a montage or split-screen recap with credit text or a "SUBSCRIBE" call-to-action
+  - a sponsor / brand end-card or logo sequence
+  - a clear closing title card after the story concludes
+It often (but NOT always) follows a fade-to-black or a hard scene cut. A frame is
+NOT an outro just because it is near the end, is dark, or shows an application,
+desktop, slide, or talking head — those are main content. In particular, a live
+performance / stage / audience shot, an interview, or a person still talking is
+MAIN CONTENT even if the lighting dims or it is close to the end. The outro is a
+DISTINCT card/credits/logo sequence, not the tail of the performance itself.
+
+CRITICAL RULE — NEVER TOO EARLY:
+It is acceptable to choose a frame slightly INTO the outro, but it is NOT
+acceptable to choose a frame that still shows MAIN CONTENT. When in doubt, prefer
+image_index 0 (no outro) over guessing — a wrong outro burns an ad over real
+content, which is unacceptable. Only pick a frame if you are CONFIDENT it already
+belongs to a genuine ending sequence.
+
+Total video duration: {duration:.2f}s.
+The candidate frames and their timestamps are:
+{listing}
+
+Respond with ONLY a JSON object, no prose, no markdown fences:
+{{"image_index": <1-based index of the outro-start frame, or 0 if the video has NO outro>, "confidence": <0.0-1.0>}}

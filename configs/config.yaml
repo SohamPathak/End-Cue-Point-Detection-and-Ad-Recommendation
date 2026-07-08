@@ -1,0 +1,94 @@
+# Brahma AI — central configuration.
+# Everything tunable lives here so behaviour changes without code edits.
+
+gemini:
+  auth: vertex                    # authenticate via GCP service account (see .env)
+  location: us-central1           # Vertex region; project_id is read from the creds file
+  orchestrator_model: gemini-2.5-flash
+  vision_model: gemini-2.5-flash  # bump to gemini-2.5-pro for harder outro frames
+  request_timeout_sec: 60
+
+weather:
+  provider: open-meteo            # keyless geocoding + forecast
+  geocoding_url: https://geocoding-api.open-meteo.com/v1/search
+  forecast_url: https://api.open-meteo.com/v1/forecast
+  geocode_candidates: 5           # how many disambiguation options to offer
+  # WMO weather codes treated as "rainy" (drizzle, rain, showers, thunderstorm).
+  rainy_codes: [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]
+  # Open-Meteo's geocoder is name-exact: some cities index only under their
+  # official/renamed spelling. These aliases are ALSO searched and merged so the
+  # intended place appears in the disambiguation list (user still chooses).
+  geocode_aliases:
+    bangalore: Bengaluru
+    bombay: Mumbai
+    calcutta: Kolkata
+    madras: Chennai
+    "new york city": New York
+
+# Feature layer — the recommender consumes these. Add a provider here to add a signal.
+# source: api | static | db | tool   (only "api" is wired today; others are stubs-by-design)
+features:
+  - name: weather
+    provider: weather             # maps to features.providers registry key
+    source: api
+    enabled: true
+    dtype: categorical            # values: sunny | rainy
+    # Example of a future static feature (declared, not yet enabled):
+  # - name: time_of_day
+  #   provider: time_of_day
+  #   source: static
+  #   enabled: false
+  #   dtype: categorical
+
+# Recommender — fixed model per experiment; swap strategy without touching callers.
+recommender:
+  strategy: rule                  # rule | llm  (rule = deterministic, reproducible)
+  llm_model: gemini-2.5-flash     # used only when strategy: llm
+  experiment_id: exp-weather-v1
+
+# Ad catalog — each ad carries metadata the recommender reasons/matches over.
+ads:
+  - id: umbrella
+    path: adv_video/Umbrella_ad.mp4
+    tags: { weather: rainy }
+    description: Umbrella advertisement for rainy weather.
+  - id: sunscreen
+    path: adv_video/Sunscreen_ad.mp4
+    tags: { weather: sunny }
+    description: Sunscreen advertisement for sunny weather.
+
+outro:
+  # Gemini-only detector: sample a bounded end-window on a coarse grid, let the
+  # model pick the outro region, then refine on a finer grid around it.
+  # Credits realistically never exceed ~5 min, so we only scan the tail.
+  max_outro_lookback_sec: 300     # only inspect the last N seconds (min with duration)
+  coarse_step_sec: 10.0           # coarse grid spacing
+  fine_step_sec: 1.0              # fine grid spacing around the coarse pick
+  min_outro_sec: 3.0              # clamp implausibly short outros
+  # NEVER-EARLY safety: bias the reported start slightly LATE. The model returns
+  # the first frame that clearly shows the outro (true start <= that time), and
+  # we never subtract. See docs.
+  safety_bias_sec: 0.0            # extra seconds added to the pick (>=0 only)
+  # CV signals (blackdetect + scenedetect) are used only by the offline eval
+  # harness (scripts/eval_outro.py), not in the request path:
+  eval_scene_threshold: 27.0
+  eval_black_min_duration: 0.1
+  eval_black_pixel_threshold: 0.10
+
+compositor:
+  ad_start_delay_sec: 2.0         # configurable delay: seconds into the outro before the ad appears
+  fade_duration_sec: 1.0          # crossfade back to credits when ad is shorter than outro
+  scale_mode: fit                 # letterbox ad to the video's WxH
+  video_codec: libx264
+  audio_codec: aac
+  crf: 20
+
+agent:
+  enabled: true                   # false -> deterministic fixed-order pipeline (no LLM loop)
+
+paths:
+  output_dir: outputs
+  cache_dir: outputs/cache
+  sample_video_dir: sample_video
+  prompts_dir: configs/prompts   # LLM prompts live here as editable .txt templates
+  logo: BRAHMA_AI_Logo.jpg       # brand logo shown as the UI header
