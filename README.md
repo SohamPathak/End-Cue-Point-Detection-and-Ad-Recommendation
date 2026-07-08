@@ -25,6 +25,59 @@ paste the resulting `https://github.com/user-attachments/...` URL here.
 
 ---
 
+## Architecture & rationale
+
+### The core decision: a structured pipeline with LLM reasoning at the decision points — not a free-running agent
+
+The task is a **known, finite workflow** — detect the cue point → read weather →
+pick an ad → burn it in. It is a directed graph, not an open-ended goal. So
+rather than a fully autonomous ReAct / tool-calling loop that decides its own
+next step, I built a **deterministic orchestrator** (`agent/orchestrator.py`) that
+inserts LLM reasoning **only at the two points where judgment genuinely beats
+rules** (visual cue-point detection and ad recommendation), plus one
+human-in-the-loop point (location disambiguation).
+
+**Why this over a full agent loop:**
+
+- **Determinism & testability** — the control flow is plain code, so it is
+  reproducible and unit-tested; only the "smart leaves" are probabilistic.
+- **Cost & latency** — a loop re-invoking an LLM to orchestrate ffmpeg/weather
+  calls adds tokens and wall-clock with no accuracy gain on a fixed DAG.
+- **Failure isolation** — non-determinism is contained to two well-guarded calls
+  with structured output and fallbacks, instead of spread across the whole run.
+- **The autonomy dial still exists** — the recommender's `strategy: llm` runs the
+  decision fully on Gemini, and `agent.enabled` toggles LLM vs. deterministic. I
+  built the *seam* for more autonomy without paying for it on every run.
+
+### Patterns used, and why
+
+| Pattern | Where | Rationale |
+|---|---|---|
+| **Orchestrator / coordinator–worker** | `orchestrator.py` | A deterministic conductor delegates to smart collaborators; control flow stays testable. |
+| **Sense → Plan → Act** | collector → recommender → compositor | The classic agent loop, unrolled into explicit, cacheable phases instead of an LLM-driven `while`. |
+| **LLM-as-perception (vision grounding)** | `detect_outro` | Grounds a fuzzy visual concept ("where do credits start?") that classical CV handles brittlely; generalizes across outro styles without per-video tuning. |
+| **Coarse → fine (hierarchical refinement)** | `detect_outro` | Two-pass grid (10s → 1s) bounds vision-token cost while keeping timestamp precision. |
+| **Feature-store / blackboard** | `features/` | Weather is *one* `FeatureProvider`; the recommender reasons over whatever `FeatureSet` arrives, so new signals (geo, time, trend, DB, tool) plug in via config without touching callers. This is the main extensibility seam. |
+| **Strategy + graceful degradation** | `recommender.py` | `rule` / `llm` strategies chosen per experiment; the LLM path falls back to the deterministic rule on any error, so a demo never dead-ends. |
+| **Structured / constrained output** | both LLM calls | Every model call returns typed JSON (`{image_index, confidence}`, `{ad_id, reason}`), making the LLM↔system boundary a schema, not free text. |
+| **Guardrail / safety-constrained decision** | `detect_outro` | The **never-early guarantee**: the prompt biases late, code never subtracts, the fine pass corrects early picks, and any failure appends the ad at the end. A domain safety rule the model cannot override. |
+| **Human-in-the-loop** | location disambiguation | Ambiguous places surface candidates for the user to pick (Bangalore India vs. Pakistan) rather than a silent guess. |
+| **Explainability / reasoning trace** | `_build_reasoning` | Every run emits *why* an ad was chosen — auditability for a recommendation system. |
+| **Memoization / idempotency** | detection + composite caches | The expensive vision step runs once per video (keyed by content hash); composites cache per `(video, ad)`. |
+
+### Cross-cutting choices
+
+- **Config-driven** — models, thresholds, ad catalog, prompts, and the
+  autonomy/ strategy switches all live in `config.yaml` + editable prompt files;
+  behaviour changes without code edits.
+- **Vertex AI via a service account** — "keys, not values": only the credential
+  *structure* is committed (`bq_creds.example.json`), never secrets.
+- **Two-phase split** — cue-point detection is a property of the *video*, ad
+  selection of the *location*; separating them means changing location re-runs
+  only the cheap steps.
+
+---
+
 ## 1. What was built
 
 ### The pipeline (two phases)
